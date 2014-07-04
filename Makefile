@@ -14,8 +14,8 @@ main:
 dev:
 	watch -d -n 1 "$(OCAMLBUILD) $(MAIN).$(TYPECHECK) && cat _build/$(MAIN).$(TYPECHECK)"
 
-test: main
-	./$(EXEC)
+test:
+	./test.sh
 
 clean:
 	rm -f *~ $(EXEC) $(MAIN).$(COMPILE)
