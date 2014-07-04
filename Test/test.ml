@@ -21,6 +21,3 @@ let () = print_matrix rand
 let () = print_matrix (transpose rand)
 
 end
-
-module TestInt   = TestSM (IndexInt) (RingInt)   (TestableInt)
-module TestFloat = TestSM (IndexInt) (RingFloat) (TestableFloat)
