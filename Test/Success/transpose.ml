@@ -10,11 +10,9 @@ open TestableInt
 let () = self_init ()
 
 let test m n =
-  let rand1 = tabulate m n (fun _ _ -> randomOpt ()) in
-  let rand2 = tabulate m n (fun _ _ -> randomOpt ()) in
-  let sum12 = plus rand1 rand2 in
-  let sum21 = plus rand2 rand1 in
-  assert (SMII.equal sum12 sum21)
+  let rand   = tabulate m n (fun _ _ -> randomOpt ()) in
+  let ttrand = transpose (transpose rand) in
+  assert (SMII.equal rand ttrand)
 
 let () =
   for i = 10 to 25 do

@@ -34,6 +34,9 @@ let getCol (j : I.t) (m : t) : R.t BatMapI.t =
 let get (i : I.t) (j : I.t) (m : t) : R.t =
   try find j (find i m.table) with Not_found -> R.zero
 
+let getOpt (i : I.t) (j : I.t) (m : t) : R.t option =
+  try Some (find j (find i m.table)) with Not_found -> None
+
 let setTable (i : I.t) (j : I.t) (v : R.t) (m : table) : table =
   if R.equal R.zero v then m
   else
@@ -98,6 +101,27 @@ let tabulate (width : I.t) (height : I.t)
        let row = I.primrec (addIthJth i) empty width in
        if is_empty row then None else Some row
   in tabulateRows width height tabulateRow
+
+let mapAll (f : R.t option -> R.t option) (m : t) : t =
+  tabulate m.width m.height (fun i j -> f (getOpt i j m))
+
+let map (f : R.t -> R.t option) (m : t) : t =
+  let width  = m.width  in
+  let height = m.height in
+  let table  =
+    fold (fun i row -> add i (fold (fun j elt row ->
+    match f elt with None -> row | Some v -> add j v row) row empty)) m.table empty
+  in { width; height; table }
+
+let trim (m : t) : t = map (fun x -> if R.equal x R.zero then None else Some x) m
+
+(* If any of [m] or [n] contains [R.zero]s than they can be declared
+   different when, morally, they are equal. [safeEqual] trims both of
+   its inputs before testing for equality. *)
+let safeEqual (m : t) (n : t) : bool =
+  let m = trim m in
+  let n = trim n in
+  equal m n
 
 let id (size : I.t) : t =
   tabulateRows size size (fun i -> Some (singleton i R.unit))
