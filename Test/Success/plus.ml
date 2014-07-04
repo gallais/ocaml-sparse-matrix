@@ -14,7 +14,7 @@ let test m n =
   let rand2 = tabulate m n (fun _ _ -> randomOpt ()) in
   let sum12 = plus rand1 rand2 in
   let sum21 = plus rand2 rand1 in
-  assert (SMII.equal sum12 sum21)
+  assert (SMII.equal (==) sum12 sum21)
 
 let () =
   for i = 10 to 25 do

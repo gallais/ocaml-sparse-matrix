@@ -10,10 +10,14 @@ module type Ring = sig
 end
 
 module RingExt (R : Ring) = struct
-  let fromOption = function None -> R.zero | Some x -> x
-  let toOption a = if R.equal a R.zero then None else Some a
+  let equalZero   = R.equal R.zero
+  let fromZeroOpt = function None -> R.zero | Some x -> x
+  let isZeroOpt a = if equalZero a then None else Some a
   let liftNonZero op a b =
-    toOption (op (fromOption a) (fromOption b))
+    isZeroOpt (op (fromZeroOpt a) (fromZeroOpt b))
+  let equalAndNonZero (eq : R.t -> R.t -> bool) a b =
+    assert (not (equalZero a) && not (equalZero b));
+    eq a b
 end
 
 module RingInt : Ring with type t = int = struct

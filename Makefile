@@ -2,7 +2,7 @@ PACKAGE     := batteries
 DIRECTORIES := Data,Test
 OCAMLBUILD  := ocamlbuild -classic-display -j 2 -package $(PACKAGE) -Is $(DIRECTORIES)
 
-MAIN        := main
+MAIN        := Test/test
 EXEC        := test
 COMPILE     := native
 TYPECHECK   := inferred.mli

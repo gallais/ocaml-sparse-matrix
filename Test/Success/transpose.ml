@@ -12,7 +12,9 @@ let () = self_init ()
 let test m n =
   let rand   = tabulate m n (fun _ _ -> randomOpt ()) in
   let ttrand = transpose (transpose rand) in
-  assert (SMII.equal rand ttrand)
+  assert (SMII.equal (==) rand ttrand)
+(*  try assert (SMII.equal (==) rand ttrand)
+  with _ -> print rand; print ttrand; failwith "exit!" *)
 
 let () =
   for i = 10 to 25 do
