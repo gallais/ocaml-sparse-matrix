@@ -15,6 +15,11 @@ type t =
   ; height : I.t
   ; table  : table }
 
+let equal (m : t) (n : t) : bool =
+     m.width  == n.width
+  && m.height == n.height
+  && equal (equal (==)) m.table n.table
+
 let findDefault (i : I.t) (m : 'a BatMapI.t) (dflt : 'a) : 'a =
   try find i m with Not_found -> dflt
 
@@ -56,45 +61,46 @@ let show (m : t) : string =
       let row = findDefault i m.table empty in
       showRow row m.width :: ss) [] m.height)
 
+let print (m : t) : unit = print_endline (show m)
+
 let plus (m : t) (n : t) : t =
   if (m.width <> n.width || m.height <> n.height)
   then raise (Invalid_argument "[plus] inputs of different sizes")
   else
-    let table =
-      fold (fun i rowm table ->
-        modify_opt i (fun mrown ->
-          match mrown with
-          | None      -> Some rowm
-          | Some rown ->
-        let row' =
-          fold (fun j eltm rown ->
-            modify_opt j (liftNonZero R.plus (Some eltm)) rown)
-          rowm rown
-        in if is_empty row' then None else Some row') table)
-      m.table n.table
-  in { width = m.width; height = m.height; table }
+    let table = merge (fun _ (mrowm : R.t BatMapI.t option) mrown ->
+      match mrowm, mrown with
+      | None , _ -> mrown
+      | _ , None -> mrowm
+      | Some rowm , Some rown ->
+        let row = merge (fun _ -> liftNonZero R.plus) rowm rown
+        in if is_empty row then None else Some row) m.table n.table
+    in { width = m.width; height = m.height; table }
 
 (* We assume here that `f` delivers rows of length `width`. *)
 let tabulateRows (width : I.t) (height : I.t)
-  (f : I.t -> R.t BatMapI.t) : t =
-  let addIthCol i = add i (f i) in
-  let table = I.primrec addIthCol empty height in
-  { width; height; table }
+  (f : I.t -> R.t BatMapI.t option) : t =
+  let addIthCol i table =
+    let fi = f i in
+    match fi with None -> table | Some fi -> add i fi table
+  in let table = I.primrec addIthCol empty height
+  in { width; height; table }
 
 let tabulateCols (width : I.t) (height : I.t)
-  (f : I.t -> R.t BatMapI.t) : t =
+  (f : I.t -> R.t BatMapI.t option) : t =
   transpose (tabulateRows height width f)
 
 let tabulate (width : I.t) (height : I.t)
-  (f : I.t -> I.t -> R.t) : t =
+  (f : I.t -> I.t -> R.t option) : t =
   let addIthJth i j acc =
-     let v = f i j in
-     if R.equal v R.zero then acc else add j v acc
-  in let tabulateRow i = I.primrec (addIthJth i) empty width
+     let fij = f i j in
+     match fij with None -> acc | Some v -> add j v acc
+  in let tabulateRow i =
+       let row = I.primrec (addIthJth i) empty width in
+       if is_empty row then None else Some row
   in tabulateRows width height tabulateRow
 
 let id (size : I.t) : t =
-  tabulateRows size size (fun i -> singleton i R.unit)
+  tabulateRows size size (fun i -> Some (singleton i R.unit))
 
 let zero (width : I.t) (height : I.t) : t =
   { width; height; table = empty }
