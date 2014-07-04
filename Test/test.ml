@@ -1,3 +1,8 @@
+open Index
+open Ring
+open SparseMatrix
+open Testable
+
 module TestSM (I : Index) (R : Ring)
   (T : Testable with type t = R.t) = struct
 
