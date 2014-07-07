@@ -130,19 +130,19 @@ let tabulate (width : I.t) (height : I.t)
     [trim] is just one really boring instance of [map] but
     it plays an important role in the definition of [safeEqual]. *)
 
-let mapAll (f : R.t option -> R.t option) (m : t) : t =
-  tabulate m.width m.height (fun i j -> f (getOpt i j m))
+let mapAll (f : I.t -> I.t -> R.t option -> R.t option) (m : t) : t =
+  tabulate m.width m.height (fun i j -> f i j (getOpt i j m))
 
-let mapRow (f : 'a -> 'a option) (row : 'a BatMapI.t) =
-  fold (fun j elt -> optionElim (add j) (f elt)) row empty
+let mapRow (f : I.t -> 'a -> 'a option) (row : 'a BatMapI.t) =
+  fold (fun j elt -> optionElim (add j) (f j elt)) row empty
 
-let map (f : R.t -> R.t option) (m : t) : t =
+let map (f : I.t -> I.t -> R.t -> R.t option) (m : t) : t =
   let width  = m.width  in
   let height = m.height in
-  let table  = fold (fun i row -> add i (mapRow f row)) m.table empty
+  let table  = fold (fun i row -> add i (mapRow (f i) row)) m.table empty
   in { width; height; table }
 
-let trim (m : t) : t = map isZeroOpt m
+let trim (m : t) : t = map (fun i j -> isZeroOpt) m
 
 (** If any of [m] or [n] contains [R.zero]s than they can be
     declared different when, morally, they are equal.
