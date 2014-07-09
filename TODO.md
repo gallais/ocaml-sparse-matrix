@@ -8,11 +8,8 @@ Allow different indices?
   be dismissed entirely by having a meta module instantiating both
   I and J with the same argument.
 
-Use phantom types to ensure [R.zero]-freeness?
-----------------------------------------------
+  **NB:** this would force us to rethink the way we type [transpose].
+  We could e.g. turn [t] into [(i, j) t] and have:
 
-  At the moment, we say explicitly in the documentation that one
-  should never call [equal] on non [R.zero]-free matrices. Why
-  not build that invariant in the type and give function a more
-  precise type? This way we enforce [R.zero]-freeness in the
-  interface of the library!
+  > let transpose (m : (i, j) t) : (j, i) t
+
