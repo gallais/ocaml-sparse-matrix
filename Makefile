@@ -1,6 +1,6 @@
-PACKAGE     := batteries
+PACKAGES    := batteries
 DIRECTORIES := Data,Test
-OCAMLBUILD  := ocamlbuild -classic-display -j 2 -package $(PACKAGE) -Is $(DIRECTORIES)
+OCAMLBUILD  := ocamlbuild -use-ocamlfind -classic-display -j 2 -pkgs $(PACKAGES) -Is $(DIRECTORIES)
 
 MAIN        := Test/test
 EXEC        := test
@@ -12,7 +12,10 @@ main:
 	ln -sf $(MAIN).$(COMPILE) $(EXEC)
 
 dev:
-	watch -d -n 1 "$(OCAMLBUILD) $(MAIN).$(TYPECHECK) && cat _build/$(MAIN).$(TYPECHECK)"
+	watch -d -n 1 "make type && cat _build/$(MAIN).$(TYPECHECK)"
+
+type:
+	$(OCAMLBUILD) $(MAIN).$(TYPECHECK)
 
 test:
 	./test.sh

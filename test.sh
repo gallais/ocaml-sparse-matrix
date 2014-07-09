@@ -4,8 +4,8 @@ for i in `find Test/Success/ | grep 'ml$' | sed s/\.ml//`
 do
 EXEC=$(basename $i)
 
-if ocamlbuild -classic-display -j 2 -package batteries -Is Data,Test $i.native > /dev/null \
-  && ./$EXEC.native >2 /dev/null
+if ocamlbuild -use-ocamlfind -classic-display -j 2 -pkgs batteries -Is Data,Test $i.native > /dev/null \
+  && ./$EXEC.native > /dev/null
 then echo -e "$EXEC: \e[1m\e[32mok!\e[0m"
 else echo -e "$EXEC: \e[1m\e[31mfail!\e[0m"
 fi

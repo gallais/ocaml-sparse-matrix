@@ -13,7 +13,8 @@ module RingExt (R : Ring) = struct
   let equalZero   = R.equal R.zero
   let fromZeroOpt = function None -> R.zero | Some x -> x
   let isZeroOpt a = if equalZero a then None else Some a
-  let liftNonZero op a b =
+  let liftNonZero op a = isZeroOpt (op (fromZeroOpt a))
+  let liftNonZero2 op a b =
     isZeroOpt (op (fromZeroOpt a) (fromZeroOpt b))
   let equalAndNonZero (eq : R.t -> R.t -> bool) a b =
     assert (not (equalZero a) && not (equalZero b));
