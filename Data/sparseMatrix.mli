@@ -7,14 +7,14 @@ module Vec : sig type 'a t end
 
 (** Phantom types *)
 type zeroFree
-type unknown
+type whoKnows
 
 (** Matrix type *)
 type 'a t
 val width  : 'a t -> I.t
 val height : 'a t -> I.t
 val table  : 'a t -> R.t Vec.t Vec.t
-val makeT  : I.t -> I.t -> R.t Vec.t Vec.t -> unknown t
+val makeT  : I.t -> I.t -> R.t Vec.t Vec.t -> whoKnows t
 
 (** Safe accessors all implemented by instantiating the
     corresponding [safeXxxx] version which catches

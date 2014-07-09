@@ -16,7 +16,7 @@ let isEmptyOpt (m : 'a Vec.t) =
 
 type table = R.t Vec.t Vec.t
 type zeroFree
-type unknown
+type whoKnows
 
 type 'a t =
   { width  : I.t
@@ -27,7 +27,7 @@ let width  m = m.width
 let height m = m.height
 let table  m = m.table
 
-let makeT (width : I.t) (height : I.t) (table : table) : unknown t =
+let makeT (width : I.t) (height : I.t) (table : table) : whoKnows t =
   { width; height; table }
 
 (** Equality is defined by nesting [Vec]'s parametrized
