@@ -3,7 +3,7 @@ open Ring
 open SparseMatrix
 open Testable
 
-module SMII = SparseMatrix (IndexInt) (RingInt)
+module SMII = SparseMatrix.Make (IndexInt) (RingInt)
 open SMII
 open TestableInt
 
