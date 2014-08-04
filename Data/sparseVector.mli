@@ -31,5 +31,13 @@ module type S = sig
   module AG : AdditiveGroup with type t = zeroFree t
 end
 
+module type Sext = sig
+  include S
+  val mult : 'a t -> 'b t -> ag
+end
+
 module Make (I : Index) (AG : AdditiveGroup) :
   S with type idx = I.t and type ag = AG.t
+
+module MakeExt (I : Index) (R : Ring) :
+  Sext with type idx = I.t and type ag = R.t

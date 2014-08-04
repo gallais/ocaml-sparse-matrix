@@ -1,5 +1,6 @@
 open Index
 open AdditiveGroup
+open Ring
 
 module Make (I : Index) (AG : AdditiveGroup) = struct
 
@@ -75,6 +76,17 @@ end
 
 end
 
+module MakeExt (I : Index) (R : Ring) = struct
+
+include Make (I) (R)
+open AGExt
+
+let mult (v : 'a Vector.t) (w : 'b Vector.t) : R.t =
+  let vw = mergeWith (fun _ -> liftNonZero2 R.mult) v w in
+  fold (fun _ -> R.plus) vw R.zero
+
+end
+
 module type S = sig
   type zeroFree
   type whoKnows
@@ -102,4 +114,9 @@ module type S = sig
   val singleton : idx -> ag -> zeroFree t
   val show : string -> (ag -> string) -> idx -> 'a t -> string
   module AG : AdditiveGroup with type t = zeroFree t
+end
+
+module type Sext = sig
+  include S
+  val mult : 'a t -> 'b t -> ag
 end

@@ -7,10 +7,10 @@ open OptionExt
 
 module Make (I : Index) (R : Ring) = struct
 
-module AGExtR   = AGExt (R)
-module IVector  = SparseVector.Make (I) (R)
-module AGExtIV  = AGExt (IVector.AG)
-module Table    = SparseVector.Make (I) (IVector.AG)
+module AGExtR  = AGExt (R)
+module IVector = SparseVector.MakeExt (I) (R)
+module AGExtIV = AGExt (IVector.AG)
+module Table   = SparseVector.Make (I) (IVector.AG)
 
 open AGExtR
 
@@ -92,24 +92,33 @@ let mergeWith f =
   Table.mergeWith (fun i ->
     AGExtIV.liftNonZero2 (IVector.mergeWith (f i)))
 
-(** [plus] is merging two matrices of the same geometry. *)
+(** [plus] and [minus] are merging two matrices of the same
+    geometry. Together with [opp], they are merely lifting
+    the definitions defined in [Table.AG]. *)
 
 let plus (m : 'a t) (n : 'b t) : zeroFree t =
   if (m.width <> n.width || m.height <> n.height) then
   raise (Invalid_argument "[plus] inputs have distinct geometries")
-  else
-    let plus _ _ = liftNonZero2 R.plus in
-    let table    = mergeWith plus m.table n.table in
-    { m with table }
+  else { m with table = Table.AG.plus m.table n.table }
 
 let minus (m : 'a t) (n : 'b t) : zeroFree t =
   if (m.width <> n.width || m.height <> n.height) then
   raise (Invalid_argument "[minus] inputs have distinct geometries")
-  else
-    let minus _ _ = liftNonZero2 R.minus in
-    let table     = mergeWith minus m.table n.table in
-    { m with table }
+  else { m with table = Table.AG.minus m.table n.table }
 
+let opp (m : 'a t) : zeroFree t =
+ { m with table = Table.AG.opp m.table }
+
+let mult (m : zeroFree t) (n : 'a t) : zeroFree t =
+  if m.width <> n.height
+  then raise (Invalid_argument "[mult] incompatible sizes")
+  else
+    let n_    = transpose n in
+    let table =
+      Table.fold (fun i mi_ -> Table.set i
+     (Table.fold (fun j n_j -> IVector.set j (IVector.mult mi_ n_j))
+        n_.table IVector.zero)) m.table Table.zero
+    in { height = m.height; width = n.width; table }
 
 (*
 (* We assume here that `f` delivers rows of length `width`. *)
@@ -150,8 +159,6 @@ let mapAll (f : I.t -> I.t -> R.t option -> R.t option)
 let map f (m : 'a t) : zeroFree t =
   let table = Table.map (fun i -> IVector.map (f i)) m.table
   in { m with table }
-
-let opp (m : 'a t) : zeroFree t = map (fun _ _ -> R.opp) m
 
 let makeT (width : I.t) (height : I.t) table : zeroFree t =
   let test i j r = if i < height && j < width then R.zero else r in
