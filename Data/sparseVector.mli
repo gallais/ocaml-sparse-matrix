@@ -25,6 +25,7 @@ module type S = sig
   val coerce     : zF t -> 'a t
   val equal      : (ag -> ag -> bool) -> zF t -> zF t -> bool
   val safeEqual  : (ag -> ag -> bool) -> 'a t -> 'b t -> bool
+  val constant   : idx -> ag -> zF t
   val zero       : zF t
   val singleton  : idx -> ag -> zF t
   val show       : string -> (ag -> string) -> idx -> 'a t -> string

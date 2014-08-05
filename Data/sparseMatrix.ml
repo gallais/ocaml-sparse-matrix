@@ -185,10 +185,14 @@ let print (m : 'a t) : unit = print_endline (show m)
 
 (** Some well-known matrices. *)
 
-(*
-let id (size : I.t) : zF t =
-  rawTabulateRows size size (fun i -> Some (singleton i R.unit))
-*)
+let diag (size : I.t) (rs : 'a IVector.t) : zF t =
+  let alg i el ih =
+    if size <= i then ih
+    else Table.set i (IVector.singleton i el) ih
+  in let table = IVector.fold alg rs Table.zero
+  in { height = size; width = size; table }
+
+let id (size : I.t) : zF t = diag size (IVector.constant size R.unit)
 
 let zero (width : I.t) (height : I.t) : zF t =
   { width; height; table = Table.zero }

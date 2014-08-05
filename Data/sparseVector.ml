@@ -63,6 +63,9 @@ let safeEqual eq (v : 'a t) (w : 'b t) : bool =
 
 let zero          = Vector.empty
 let singleton i r = set i r zero
+let constant (size : idx) (value : ag) : zF t =
+  if AGExt.equalZero value then zero
+  else I.primrec (fun i -> set i value) zero size
 
 module AG : AdditiveGroup with type t = zF t = struct
   type t    = AG.t Vector.t
@@ -109,6 +112,7 @@ module type S = sig
   val coerce     : zF t -> 'a t
   val equal      : (ag -> ag -> bool) -> zF t -> zF t -> bool
   val safeEqual  : (ag -> ag -> bool) -> 'a t -> 'b t -> bool
+  val constant   : idx -> ag -> zF t
   val zero       : zF t
   val singleton  : idx -> ag -> zF t
   val show       : string -> (ag -> string) -> idx -> 'a t -> string
