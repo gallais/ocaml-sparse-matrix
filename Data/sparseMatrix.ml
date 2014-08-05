@@ -14,8 +14,8 @@ module Table   = SparseVector.Make (I) (IVector.AG)
 
 open AGExtR
 
-type zeroFree = Table.zeroFree
-type whoKnows = Table.whoKnows
+type zF = Table.zF
+type wK = Table.wK
 
 type 'a t =
   { width  : I.t
@@ -35,7 +35,7 @@ let table  m = m.table
     take care of that (but will discard the trimmed equivalents
     after testing for equality). *)
 
-let equal eq (m : zeroFree t) (n : zeroFree t) : bool =
+let equal eq (m : zF t) (n : zF t) : bool =
      m.width  == n.width
   && m.height == n.height
   && Table.equal (IVector.equal eq) m.table n.table
@@ -60,7 +60,7 @@ let getCol (j : I.t) (m : 'a t) =
     IVector.safeGet j row (fun v -> IVector.set i v col) col)
   m.table IVector.zero
 
-let safeGet i j (m : zeroFree t) (f : R.t -> 'b) (dflt : 'b) : 'b =
+let safeGet i j (m : zF t) (f : R.t -> 'b) (dflt : 'b) : 'b =
   Table.safeGet i m.table (fun t -> IVector.safeGet j t f dflt) dflt
 
 let getDefault i j m (dflt : R.t) : R.t =
@@ -79,10 +79,10 @@ let set (i : I.t) (j : I.t) (v : R.t) (m : 'a t) : 'a t =
   let table = Table.set i setRow m.table in
   { m with table }
 
-let fold (f : I.t -> I.t -> 'a -> 'b -> 'b) (m : zeroFree t) b : 'b =
+let fold (f : I.t -> I.t -> 'a -> 'b -> 'b) (m : zF t) b : 'b =
   Table.fold (fun i -> IVector.fold (f i)) m.table b
 
-let transpose (m : zeroFree t) : zeroFree t =
+let transpose (m : zF t) : zF t =
   let res = { width  = m.height
             ; height = m.width
             ; table  = Table.zero }
@@ -96,20 +96,20 @@ let mergeWith f =
     geometry. Together with [opp], they are merely lifting
     the definitions defined in [Table.AG]. *)
 
-let plus (m : 'a t) (n : 'b t) : zeroFree t =
+let plus (m : 'a t) (n : 'b t) : zF t =
   if (m.width <> n.width || m.height <> n.height) then
   raise (Invalid_argument "[plus] inputs have distinct geometries")
   else { m with table = Table.AG.plus m.table n.table }
 
-let minus (m : 'a t) (n : 'b t) : zeroFree t =
+let minus (m : 'a t) (n : 'b t) : zF t =
   if (m.width <> n.width || m.height <> n.height) then
   raise (Invalid_argument "[minus] inputs have distinct geometries")
   else { m with table = Table.AG.minus m.table n.table }
 
-let opp (m : 'a t) : zeroFree t =
+let opp (m : 'a t) : zF t =
  { m with table = Table.AG.opp m.table }
 
-let mult (m : zeroFree t) (n : 'a t) : zeroFree t =
+let mult (m : zF t) (n : 'a t) : zF t =
   if m.width <> n.height
   then raise (Invalid_argument "[mult] incompatible sizes")
   else
@@ -129,11 +129,11 @@ let rawTabulateRows (width : I.t) (height : I.t)
   in { width; height; table }
 
 let tabulateCols (width : I.t) (height : I.t)
-  (f : I.t -> R.t Vector.t option) : zeroFree t =
+  (f : I.t -> R.t Vector.t option) : zF t =
   transpose (rawTabulateRows height width f)
 
 let tabulate (width : I.t) (height : I.t)
-  (f : I.t -> I.t -> R.t option) : zeroFree t =
+  (f : I.t -> I.t -> R.t option) : zF t =
   let addIthJth i j = optionElim (add j) (bind (f i j) isZeroOpt)
   in let tabulateRow i =
        isEmptyOpt (I.primrec (addIthJth i) empty width)
@@ -151,20 +151,20 @@ let tabulate (width : I.t) (height : I.t)
 
 (*
 let mapAll (f : I.t -> I.t -> R.t option -> R.t option)
-  (m : 'a t) : zeroFree t =
+  (m : 'a t) : zF t =
   tabulate m.width m.height (fun i j -> f i j (getOpt i j m))
 
 *)
 
-let map f (m : 'a t) : zeroFree t =
+let map f (m : 'a t) : zF t =
   let table = Table.map (fun i -> IVector.map (f i)) m.table
   in { m with table }
 
-let makeT (width : I.t) (height : I.t) table : zeroFree t =
+let makeT (width : I.t) (height : I.t) table : zF t =
   let test i j r = if i < height && j < width then R.zero else r in
   map test { width; height; table }
 
-let trim (m : 'a t) : zeroFree t = map (fun i j x -> x) m
+let trim (m : 'a t) : zF t = map (fun i j x -> x) m
 
 (** [safeEqual] starts by trimming its input so that they
     are safe to use with [equal]. *)
@@ -186,10 +186,11 @@ let print (m : 'a t) : unit = print_endline (show m)
 (** Some well-known matrices. *)
 
 (*
-let id (size : I.t) : zeroFree t =
+let id (size : I.t) : zF t =
   rawTabulateRows size size (fun i -> Some (singleton i R.unit))
 *)
 
-let zero (width : I.t) (height : I.t) : zeroFree t =
+let zero (width : I.t) (height : I.t) : zF t =
   { width; height; table = Table.zero }
+
 end

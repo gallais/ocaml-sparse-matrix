@@ -3,32 +3,32 @@ open AdditiveGroup
 open Ring
 
 module type S = sig
-  type zeroFree
-  type whoKnows
+  type zF (* zero Free! *)
+  type wK (* who Knows? *)
   type idx
   type ag
   type 'a t
 
-  val is_empty : zeroFree t -> bool
-  val safeGet : idx -> zeroFree t -> (ag -> 'b) -> 'b -> 'b
-  val getDefault : idx -> zeroFree t -> ag -> ag
-  val get        : idx -> zeroFree t -> ag
-  val getOpt     : idx -> zeroFree t -> ag option
-  val set : idx -> ag -> 'a t -> 'a t
-  val fold : (idx -> ag -> 'b -> 'b) -> zeroFree t -> 'b -> 'b
-  val mergeWith : (idx -> ag option -> ag option -> ag option) ->
-                  'a t -> 'b t -> zeroFree t
-  val tabulate : idx -> (idx -> ag) -> zeroFree t
-  val mapAll : idx -> (idx -> ag option -> ag) -> ag t -> zeroFree t
-  val map    : (idx -> ag -> ag) -> 'a t -> zeroFree t
-  val trim   : 'a t -> zeroFree t
-  val coerce : zeroFree t -> 'a t
-  val equal : (ag -> ag -> bool) -> zeroFree t -> zeroFree t -> bool
-  val safeEqual : (ag -> ag -> bool) -> 'a t -> 'b t -> bool
-  val zero      : zeroFree t
-  val singleton : idx -> ag -> zeroFree t
-  val show : string -> (ag -> string) -> idx -> 'a t -> string
-  module AG : AdditiveGroup with type t = zeroFree t
+  val is_empty   : zF t -> bool
+  val safeGet    : idx -> zF t -> (ag -> 'b) -> 'b -> 'b
+  val getDefault : idx -> zF t -> ag -> ag
+  val get        : idx -> zF t -> ag
+  val getOpt     : idx -> zF t -> ag option
+  val set        : idx -> ag -> 'a t -> 'a t
+  val fold       : (idx -> ag -> 'b -> 'b) -> zF t -> 'b -> 'b
+  val mergeWith  : (idx -> ag option -> ag option -> ag option) ->
+                   'a t -> 'b t -> zF t
+  val tabulate   : idx -> (idx -> ag) -> zF t
+  val mapAll     : idx -> (idx -> ag option -> ag) -> 'a t -> zF t
+  val map        : (idx -> ag -> ag) -> 'a t -> zF t
+  val trim       : 'a t -> zF t
+  val coerce     : zF t -> 'a t
+  val equal      : (ag -> ag -> bool) -> zF t -> zF t -> bool
+  val safeEqual  : (ag -> ag -> bool) -> 'a t -> 'b t -> bool
+  val zero       : zF t
+  val singleton  : idx -> ag -> zF t
+  val show       : string -> (ag -> string) -> idx -> 'a t -> string
+  module AG      : AdditiveGroup with type t = zF t
 end
 
 module type Sext = sig
