@@ -5,7 +5,6 @@ open Ring
 open BatOption
 open OptionExt
 
-
 module Make (I : Index) (R : Ring) = struct
 
 module AGExtR  = AGExt (R)
@@ -179,12 +178,15 @@ let mapAll (f : I.t -> I.t -> R.t option -> R.t option)
 *)
 
 let map f (m : 'a t) : zF t =
-  let table = Table.map (fun i -> IVector.map (f i)) m.table
-  in { m with table }
+  let mapCell f j cell = if m.width <= j then R.zero else f j cell in
+  let mapRow i row =
+    if m.height <= i then IVector.zero
+    else IVector.map (mapCell (f i)) row in
+  let table = Table.map mapRow m.table in
+  { m with table }
 
-let makeT (height : I.t) (width : I.t) table : zF t =
-  let test i j r = if i < height && j < width then R.zero else r in
-  map test { width; height; table }
+let makeT (height : I.t) (width : I.t) table : wK t =
+  { height; width; table }
 
 let trim (m : 'a t) : zF t = map (fun i j x -> x) m
 
