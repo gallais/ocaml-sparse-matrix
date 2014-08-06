@@ -5,6 +5,7 @@ open Ring
 open BatOption
 open OptionExt
 
+
 module Make (I : Index) (R : Ring) = struct
 
 module AGExtR  = AGExt (R)
@@ -14,8 +15,10 @@ module Table   = SparseVector.Make (I) (IVector.AG)
 
 open AGExtR
 
-type zF = Table.zF
-type wK = Table.wK
+type zF  = Table.zF
+type wK  = Table.wK
+type idx = I.t
+type ag  = R.t
 
 type 'a t =
   { width  : I.t
@@ -51,7 +54,6 @@ let equal eq (m : zF t) (n : zF t) : bool =
     [safeGet] corresponds to 2 nested [safeFind] thus
     allowing us to safely query a matrix. *)
 
-
 let getRow (i : I.t) (m : 'a t) =
   Table.getDefault i m.table IVector.zero
 
@@ -61,7 +63,11 @@ let getCol (j : I.t) (m : 'a t) =
   m.table IVector.zero
 
 let safeGet i j (m : zF t) (f : R.t -> 'b) (dflt : 'b) : 'b =
-  Table.safeGet i m.table (fun t -> IVector.safeGet j t f dflt) dflt
+  if m.height <= i || m.width <= j
+  then raise (Invalid_argument "Index out of bound")
+  else
+    let safeGetValue j row = IVector.safeGet j row f dflt in
+    Table.safeGet i m.table (safeGetValue j) dflt
 
 let getDefault i j m (dflt : R.t) : R.t =
   safeGet i j m (fun x -> x) dflt
@@ -73,24 +79,34 @@ let getOpt (i : I.t) (j : I.t) (m : 'a t) : R.t option =
   safeGet i j m some None
 
 let set (i : I.t) (j : I.t) (v : R.t) (m : 'a t) : 'a t =
-  let setRow = Table.safeGet i m.table
-                (IVector.set j v)
-                (IVector.singleton j v) in
-  let table = Table.set i setRow m.table in
-  { m with table }
+  if m.height <= i || m.width <= j
+  then raise (Invalid_argument "Index out of bound")
+  else
+    let setRow = Table.safeGet i m.table (IVector.set j v)
+                 (IVector.singleton j v) in
+    let table = Table.set i setRow m.table in
+    { m with table }
 
 let fold (f : I.t -> I.t -> 'a -> 'b -> 'b) (m : zF t) b : 'b =
   Table.fold (fun i -> IVector.fold (f i)) m.table b
 
 let transpose (m : zF t) : zF t =
-  let res = { width  = m.height
-            ; height = m.width
+  let res = { height = m.width
+            ; width  = m.height
             ; table  = Table.zero }
   in fold (fun i j -> set j i) m res
 
-let mergeWith f =
-  Table.mergeWith (fun i ->
-    AGExtIV.liftNonZero2 (IVector.mergeWith (f i)))
+let mergeWith f m n =
+  if (m.width <> n.width || m.height <> n.height)
+  then
+    let errormsg = "[mergeWith] inputs have distinct geometries"
+    in raise (Invalid_argument errormsg)
+  else
+    let table =
+      Table.mergeWith (fun i ->
+        AGExtIV.liftNonZero2 (IVector.mergeWith (f i)))
+        m.table n.table
+    in { m with table }
 
 (** [plus] and [minus] are merging two matrices of the same
     geometry. Together with [opp], they are merely lifting
@@ -119,6 +135,12 @@ let mult (m : zF t) (n : 'a t) : zF t =
      (Table.fold (fun j n_j -> IVector.set j (IVector.mult mi_ n_j))
         n_.table IVector.zero)) m.table Table.zero
     in { height = m.height; width = n.width; table }
+
+let tabulate height width (f : I.t -> I.t -> R.t) : zF t =
+  let table =
+    Table.tabulate height
+     (fun i -> IVector.tabulate width (f i)) in
+  { height; width; table }
 
 (*
 (* We assume here that `f` delivers rows of length `width`. *)
@@ -160,7 +182,7 @@ let map f (m : 'a t) : zF t =
   let table = Table.map (fun i -> IVector.map (f i)) m.table
   in { m with table }
 
-let makeT (width : I.t) (height : I.t) table : zF t =
+let makeT (height : I.t) (width : I.t) table : zF t =
   let test i j r = if i < height && j < width then R.zero else r in
   map test { width; height; table }
 
@@ -194,7 +216,45 @@ let diag (size : I.t) (rs : 'a IVector.t) : zF t =
 
 let id (size : I.t) : zF t = diag size (IVector.constant size R.unit)
 
-let zero (width : I.t) (height : I.t) : zF t =
+let zero (height : I.t) (width : I.t) : zF t =
   { width; height; table = Table.zero }
 
+let singleton h w i j v = set i j v (zero h w)
+
+end
+
+module type S = sig
+  type zF
+  type wK
+
+  type idx
+  type ag
+  type 'a t
+
+  val width      : 'a t -> idx
+  val height     : 'a t -> idx
+  val equal      : (ag -> ag -> bool) -> zF t -> zF t -> bool
+  val safeGet    : idx -> idx -> zF t -> (ag -> 'b) -> 'b -> 'b
+  val getDefault : idx -> idx -> zF t -> ag -> ag
+  val get        : idx -> idx -> zF t -> ag
+  val getOpt     : idx -> idx -> zF t -> ag option
+  val set        : idx -> idx -> ag -> zF t -> zF t
+  val fold       : (idx -> idx -> ag -> 'b -> 'b) -> zF t -> 'b -> 'b
+  val transpose  : zF t -> zF t
+  val mergeWith  :
+    (idx -> idx -> ag option -> ag option -> ag option) ->
+    'a t -> 'b t -> zF t
+  val plus       : zF t -> zF t -> zF t
+  val minus      : zF t -> zF t -> zF t
+  val opp        : zF t -> zF t
+  val mult       : zF t -> zF t -> zF t
+  val tabulate   : idx -> idx -> (idx -> idx -> ag) -> zF t
+  val map        : (idx -> idx -> ag -> ag) -> 'a t -> zF t
+  val trim       : 'a t -> zF t
+  val safeEqual  : (ag -> ag -> bool) -> 'a t -> 'b t -> bool
+  val show       : 'a t -> string
+  val print      : 'a t -> unit
+  val singleton  : idx -> idx -> idx -> idx -> ag -> zF t
+  val id         : idx -> zF t
+  val zero       : idx -> idx -> zF t
 end

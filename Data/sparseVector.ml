@@ -40,7 +40,7 @@ let mergeWith f (v : 'a t) (w : 'b t) : zF t =
   Vector.merge f' v w
 
 let tabulate (m : I.t) (f : I.t -> AG.t) : zF t =
-  I.primrec (fun i -> set i (f i)) Vector.empty m
+  I.primrec (fun i -> set i (f i)) Vector.empty (I.pred m)
 
 let mapAll (m : I.t) (f : I.t -> AG.t option -> AG.t) (v : AG.t t) =
   tabulate m (fun i -> f i (getOpt i v))
@@ -48,12 +48,12 @@ let mapAll (m : I.t) (f : I.t -> AG.t option -> AG.t) (v : AG.t t) =
 let map (f : I.t -> AG.t -> AG.t) (v : 'a t) : zF t =
   Vector.fold (fun i v -> set i (f i v)) v Vector.empty
 
-let trim     = map (fun i r -> r)
+let trim = map (fun _ x -> x)
 let coerce x = x
 
 let show inter (show : AG.t -> string) (size : I.t) (v : 'a t) =
   String.concat inter
-    (I.primrec (fun i ss -> show (get i v) :: ss) [] size)
+    (I.primrec (fun i ss -> show (get i v) :: ss) [] (I.pred size))
 
 let equal eq (v : zF t) (w : zF t) : bool =
   Vector.equal eq v w
@@ -65,7 +65,7 @@ let zero          = Vector.empty
 let singleton i r = set i r zero
 let constant (size : idx) (value : ag) : zF t =
   if AGExt.equalZero value then zero
-  else I.primrec (fun i -> set i value) zero size
+  else I.primrec (fun i -> set i value) zero (I.pred size)
 
 module AG : AdditiveGroup with type t = zF t = struct
   type t    = AG.t Vector.t
