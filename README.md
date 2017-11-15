@@ -1,6 +1,8 @@
 ocaml-sparse-matrix
 ===================
 
+## Disclaimer: Experimental, probably bug-ridden
+
 Implementation of Sparse Matrices in Ocaml using Batteries
 -------------------
 
